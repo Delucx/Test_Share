@@ -1,1 +1,36 @@
-Hello
+Sub ExportChosenSheetAsPDF()
+    Dim sourceWorkbook As Workbook
+    Dim sourceSheet As Worksheet
+    Dim pdfFileName As String
+    Dim sheetName As String
+    
+    ' Open the source workbook
+    Set sourceWorkbook = Workbooks.Open("C:\Path\To\SourceWorkbook.xlsx")
+    
+    ' Prompt the user to choose a sheet name
+    sheetName = InputBox("Enter the name of the sheet you want to export as PDF:", "Select Sheet")
+    
+    ' Check if the sheet exists
+    On Error Resume Next
+    Set sourceSheet = sourceWorkbook.Sheets(sheetName)
+    On Error GoTo 0
+    
+    If sourceSheet Is Nothing Then
+        MsgBox "Sheet '" & sheetName & "' not found!", vbExclamation
+        sourceWorkbook.Close SaveChanges:=False
+        Exit Sub
+    End If
+    
+    ' Define the file name and path for the PDF
+    pdfFileName = "C:\Path\To\" & sheetName & ".pdf"
+    
+    ' Export the chosen sheet as a PDF
+    sourceSheet.ExportAsFixedFormat Type:=xlTypePDF, Filename:=pdfFileName, Quality:=xlQualityStandard, _
+                                    IncludeDocProperties:=True, IgnorePrintAreas:=False, OpenAfterPublish:=False
+    
+    ' Notify the user
+    MsgBox "Sheet '" & sheetName & "' has been saved as PDF: " & pdfFileName
+    
+    ' Close the workbook without saving changes
+    sourceWorkbook.Close SaveChanges:=False
+End Sub
