@@ -1,36 +1,71 @@
-Sub ExportChosenSheetAsPDF()
-    Dim sourceWorkbook As Workbook
-    Dim sourceSheet As Worksheet
-    Dim pdfFileName As String
-    Dim sheetName As String
+import fitz  # PyMuPDF
+import pandas as pd
+from tkinter import Tk
+from tkinter.filedialog import askopenfilename, asksaveasfilename
+
+# Extract text and position from a PDF
+def extract_text_with_positions(pdf_path):
+    doc = fitz.open(pdf_path)
+    extracted_data = []
     
-    ' Open the source workbook
-    Set sourceWorkbook = Workbooks.Open("C:\Path\To\SourceWorkbook.xlsx")
+    for page_num in range(doc.page_count):
+        page = doc.load_page(page_num)
+        blocks = page.get_text("dict")["blocks"]
+        
+        for block in blocks:
+            if "lines" in block:
+                for line in block["lines"]:
+                    for span in line["spans"]:
+                        text = span["text"]
+                        bbox = span["bbox"]  # Bounding box for the text [x0, y0, x1, y1]
+                        extracted_data.append({
+                            "Page": page_num + 1,
+                            "Text": text,
+                            "X0": bbox[0],  # Starting X position
+                            "Y0": bbox[1],  # Starting Y position
+                            "X1": bbox[2],  # Ending X position
+                            "Y1": bbox[3],  # Ending Y position
+                        })
     
-    ' Prompt the user to choose a sheet name
-    sheetName = InputBox("Enter the name of the sheet you want to export as PDF:", "Select Sheet")
+    return extracted_data
+
+# Save extracted data to an Excel file
+def save_to_excel(data, excel_path):
+    df = pd.DataFrame(data)
+    df.to_excel(excel_path, index=False)
+
+# GUI file picker
+def pick_file():
+    # Hide the main Tkinter window
+    root = Tk()
+    root.withdraw()
     
-    ' Check if the sheet exists
-    On Error Resume Next
-    Set sourceSheet = sourceWorkbook.Sheets(sheetName)
-    On Error GoTo 0
+    # Open file dialog to pick a PDF file
+    pdf_path = askopenfilename(
+        title="Select PDF File",
+        filetypes=[("PDF Files", "*.pdf")]
+    )
     
-    If sourceSheet Is Nothing Then
-        MsgBox "Sheet '" & sheetName & "' not found!", vbExclamation
-        sourceWorkbook.Close SaveChanges:=False
-        Exit Sub
-    End If
-    
-    ' Define the file name and path for the PDF
-    pdfFileName = "C:\Path\To\" & sheetName & ".pdf"
-    
-    ' Export the chosen sheet as a PDF
-    sourceSheet.ExportAsFixedFormat Type:=xlTypePDF, Filename:=pdfFileName, Quality:=xlQualityStandard, _
-                                    IncludeDocProperties:=True, IgnorePrintAreas:=False, OpenAfterPublish:=False
-    
-    ' Notify the user
-    MsgBox "Sheet '" & sheetName & "' has been saved as PDF: " & pdfFileName
-    
-    ' Close the workbook without saving changes
-    sourceWorkbook.Close SaveChanges:=False
-End Sub
+    if pdf_path:
+        # Extract text and positions
+        data = extract_text_with_positions(pdf_path)
+        
+        # Open save dialog to choose Excel file location
+        excel_path = asksaveasfilename(
+            title="Save Excel File",
+            defaultextension=".xlsx",
+            filetypes=[("Excel Files", "*.xlsx")]
+        )
+        
+        if excel_path:
+            # Save to Excel
+            save_to_excel(data, excel_path)
+            print(f"Data successfully extracted and saved to {excel_path}")
+        else:
+            print("Excel file save cancelled.")
+    else:
+        print("PDF file selection cancelled.")
+
+# Main function
+if __name__ == "__main__":
+    pick_file()
