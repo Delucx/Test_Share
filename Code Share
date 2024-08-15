@@ -4,10 +4,10 @@ from tkinter import Tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
 # Extract filtered text containing "*/" from both left and right sides of a PDF
-def extract_filtered_text_aligned(pdf_path):
+def extract_filtered_text_separated(pdf_path):
     doc = fitz.open(pdf_path)
-    left_text_blocks = []
-    right_text_blocks = []
+    left_text = []
+    right_text = []
     
     for page_num in range(doc.page_count):
         page = doc.load_page(page_num)
@@ -23,39 +23,33 @@ def extract_filtered_text_aligned(pdf_path):
                     for span in line["spans"]:
                         text = span["text"]
                         bbox = span["bbox"]  # Bounding box for the text [x0, y0, x1, y1]
-                        x0, y0 = bbox[0], bbox[1]
+                        x0 = bbox[0]
                         
                         # Filter text that contains "*/"
                         if "*/" in text:
                             # If text is in the left half
                             if x0 < mid_x:
-                                left_text_blocks.append((text, y0))
+                                left_text.append(text)
                             # If text is in the right half
                             else:
-                                right_text_blocks.append((text, y0))
-    
-    # Sort both lists by the vertical position (y0)
-    left_text_blocks.sort(key=lambda x: x[1])
-    right_text_blocks.sort(key=lambda x: x[1])
-    
-    # Ensure both lists have the same length by padding with empty strings
-    max_len = max(len(left_text_blocks), len(right_text_blocks))
-    left_text_blocks += [('', None)] * (max_len - len(left_text_blocks))
-    right_text_blocks += [('', None)] * (max_len - len(right_text_blocks))
-    
-    # Create aligned columns for the left and right text
-    left_text = [item[0] for item in left_text_blocks]
-    right_text = [item[0] for item in right_text_blocks]
+                                right_text.append(text)
     
     return left_text, right_text
 
-# Save aligned left and right side text to an Excel file
+# Save left and right side text to an Excel file
 def save_to_excel(left_text, right_text, excel_path):
-    # Create a DataFrame with two columns: Left Side and Right Side
+    # Ensure both lists are of equal length by padding with empty strings
+    max_len = max(len(left_text), len(right_text))
+    left_text += [''] * (max_len - len(left_text))
+    right_text += [''] * (max_len - len(right_text))
+    
+    # Create DataFrame with two columns: Left Side (Column A) and Right Side (Column B)
     df = pd.DataFrame({
         "Left Side": left_text,
         "Right Side": right_text
     })
+    
+    # Save DataFrame to Excel
     df.to_excel(excel_path, index=False)
 
 # GUI file picker
@@ -71,8 +65,8 @@ def pick_file():
     )
     
     if pdf_path:
-        # Extract filtered text containing "*/" and align it
-        left_text, right_text = extract_filtered_text_aligned(pdf_path)
+        # Extract filtered text containing "*/" from both left and right sides of the PDF
+        left_text, right_text = extract_filtered_text_separated(pdf_path)
         
         # Open save dialog to choose Excel file location
         excel_path = asksaveasfilename(
@@ -82,7 +76,7 @@ def pick_file():
         )
         
         if excel_path:
-            # Save to Excel
+            # Save extracted text to Excel
             save_to_excel(left_text, right_text, excel_path)
             print(f"Data successfully extracted and saved to {excel_path}")
         else:
