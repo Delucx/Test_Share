@@ -38,37 +38,20 @@ def extract_filtered_text_aligned(pdf_path):
     left_text_blocks.sort(key=lambda x: x[1])
     right_text_blocks.sort(key=lambda x: x[1])
     
-    # Align text blocks by vertical position
-    aligned_left = []
-    aligned_right = []
+    # Ensure both lists have the same length by padding with empty strings
+    max_len = max(len(left_text_blocks), len(right_text_blocks))
+    left_text_blocks += [('', None)] * (max_len - len(left_text_blocks))
+    right_text_blocks += [('', None)] * (max_len - len(right_text_blocks))
     
-    left_idx, right_idx = 0, 0
-    tolerance = 10  # Tolerance for vertical alignment in points
+    # Create aligned columns for the left and right text
+    left_text = [item[0] for item in left_text_blocks]
+    right_text = [item[0] for item in right_text_blocks]
     
-    while left_idx < len(left_text_blocks) or right_idx < len(right_text_blocks):
-        if left_idx < len(left_text_blocks) and (right_idx >= len(right_text_blocks) or left_text_blocks[left_idx][1] <= right_text_blocks[right_idx][1] + tolerance):
-            aligned_left.append(left_text_blocks[left_idx][0])
-            if right_idx < len(right_text_blocks) and abs(left_text_blocks[left_idx][1] - right_text_blocks[right_idx][1]) <= tolerance:
-                aligned_right.append(right_text_blocks[right_idx][0])
-                right_idx += 1
-            else:
-                aligned_right.append('')
-            left_idx += 1
-        else:
-            aligned_left.append('')
-            aligned_right.append(right_text_blocks[right_idx][0])
-            right_idx += 1
-    
-    return aligned_left, aligned_right
+    return left_text, right_text
 
 # Save aligned left and right side text to an Excel file
 def save_to_excel(left_text, right_text, excel_path):
-    # Ensure that both lists are of equal length by padding with empty strings
-    max_len = max(len(left_text), len(right_text))
-    left_text += [''] * (max_len - len(left_text))
-    right_text += [''] * (max_len - len(right_text))
-    
-    # Create DataFrame with two columns
+    # Create a DataFrame with two columns: Left Side and Right Side
     df = pd.DataFrame({
         "Left Side": left_text,
         "Right Side": right_text
