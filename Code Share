@@ -27,39 +27,11 @@ def extract_text_from_pdf(pdf_path):
                         # Filter text that contains "*/"
                         if "*/" in text:
                             if x0 < mid_x:
-                                left_text.append((text, bbox[1]))  # Append text and y-coordinate
+                                left_text.append(text)
                             else:
-                                right_text.append((text, bbox[1]))  # Append text and y-coordinate
+                                right_text.append(text)
     
     return left_text, right_text
-
-def align_text(left_text, right_text):
-    # Sort by y-coordinate
-    left_text.sort(key=lambda x: x[1])
-    right_text.sort(key=lambda x: x[1])
-    
-    # Create lists for aligned text
-    aligned_left = []
-    aligned_right = []
-    
-    left_idx, right_idx = 0, 0
-    tolerance = 10  # Tolerance for vertical alignment in points
-    
-    while left_idx < len(left_text) or right_idx < len(right_text):
-        if left_idx < len(left_text) and (right_idx >= len(right_text) or left_text[left_idx][1] <= right_text[right_idx][1] + tolerance):
-            aligned_left.append(left_text[left_idx][0])
-            if right_idx < len(right_text) and abs(left_text[left_idx][1] - right_text[right_idx][1]) <= tolerance:
-                aligned_right.append(right_text[right_idx][0])
-                right_idx += 1
-            else:
-                aligned_right.append('')
-            left_idx += 1
-        else:
-            aligned_left.append('')
-            aligned_right.append(right_text[right_idx][0])
-            right_idx += 1
-    
-    return aligned_left, aligned_right
 
 def save_to_excel(left_text, right_text, excel_path):
     # Ensure both lists are of equal length by padding with empty strings
@@ -88,11 +60,8 @@ def pick_file():
     )
     
     if pdf_path:
-        # Extract text with bounding boxes
+        # Extract text from both left and right sides
         left_text, right_text = extract_text_from_pdf(pdf_path)
-        
-        # Align text from left and right sides
-        aligned_left, aligned_right = align_text(left_text, right_text)
         
         # Open save dialog to choose Excel file location
         excel_path = asksaveasfilename(
@@ -102,8 +71,8 @@ def pick_file():
         )
         
         if excel_path:
-            # Save aligned text to Excel
-            save_to_excel(aligned_left, aligned_right, excel_path)
+            # Save extracted text to Excel
+            save_to_excel(left_text, right_text, excel_path)
             print(f"Data successfully extracted and saved to {excel_path}")
         else:
             print("Excel file save cancelled.")
