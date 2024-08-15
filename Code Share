@@ -41,10 +41,12 @@ def extract_left_right_text_aligned(pdf_path):
     aligned_right = []
     
     left_idx, right_idx = 0, 0
+    tolerance = 10  # Tolerance for vertical alignment in points
+    
     while left_idx < len(left_text_blocks) or right_idx < len(right_text_blocks):
-        if left_idx < len(left_text_blocks) and (right_idx >= len(right_text_blocks) or left_text_blocks[left_idx][1] <= right_text_blocks[right_idx][1]):
+        if left_idx < len(left_text_blocks) and (right_idx >= len(right_text_blocks) or left_text_blocks[left_idx][1] <= right_text_blocks[right_idx][1] + tolerance):
             aligned_left.append(left_text_blocks[left_idx][0])
-            if right_idx < len(right_text_blocks) and abs(left_text_blocks[left_idx][1] - right_text_blocks[right_idx][1]) < 10:  # Allow some tolerance for alignment
+            if right_idx < len(right_text_blocks) and abs(left_text_blocks[left_idx][1] - right_text_blocks[right_idx][1]) <= tolerance:
                 aligned_right.append(right_text_blocks[right_idx][0])
                 right_idx += 1
             else:
