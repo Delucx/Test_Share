@@ -63,6 +63,12 @@ def extract_filtered_text_aligned(pdf_path):
 
 # Save aligned left and right side text to an Excel file
 def save_to_excel(left_text, right_text, excel_path):
+    # Ensure that both lists are of equal length by padding with empty strings
+    max_len = max(len(left_text), len(right_text))
+    left_text += [''] * (max_len - len(left_text))
+    right_text += [''] * (max_len - len(right_text))
+    
+    # Create DataFrame with two columns
     df = pd.DataFrame({
         "Left Side": left_text,
         "Right Side": right_text
